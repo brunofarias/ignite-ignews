@@ -4,7 +4,6 @@ import { getSession } from "next-auth/client";
 import { stripe } from "../../services/stripe";
 import { fauna } from "../../services/fauna";
 
-
 type User = {
   ref: {
     id: string,
