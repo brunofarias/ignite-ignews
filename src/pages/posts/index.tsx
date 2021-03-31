@@ -1,12 +1,25 @@
 import { GetStaticProps } from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 
 import Prismic from '@prismicio/client';
+import { RichText } from 'prismic-dom'
 import { getPrismicClient } from '../../services/prismic';
 
-import styles from '../../styles/pages/postsMain.module.scss';
+import styles from '../../styles/pages/posts.module.scss';
 
-export default function Posts() {
+type Post = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  updatedAt: string;
+}
+
+interface PostsProps {
+  posts: Post[];
+}
+
+export default function Posts({ posts }: PostsProps) {
   return (
     <>
       <Head>
@@ -14,27 +27,20 @@ export default function Posts() {
       </Head>
       <main className={styles.container}>
         <div className={styles.posts}>
-          <a href="">
-            <time>10 de Abril</time>
-            <strong>Title</strong>
-            <p>Posts</p>
-          </a>
-          <a href="">
-            <time>10 de Abril</time>
-            <strong>Title</strong>
-            <p>Posts</p>
-          </a>
-          <a href="">
-            <time>10 de Abril</time>
-            <strong>Title</strong>
-            <p>Posts</p>
-          </a>
+          {posts.map(post => (
+            <Link href={`/posts/${post.slug}`}>
+              <a key={post.slug}>
+                <div>{post.updatedAt}</div>
+                <strong>{post.title}</strong>
+                <p>{post.excerpt}</p>
+              </a>
+            </Link>
+          ))}
         </div>
       </main>
     </>
   );
 }
-
 
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient()
@@ -46,9 +52,22 @@ export const getStaticProps: GetStaticProps = async () => {
     pageSize: 100
   })
 
-  console.log(JSON.stringify(response, null, 2));
+  const posts = response.results.map(post => {
+    return {
+      slug: post.uid,
+      title: RichText.asText(post.data.title),
+      excerpt: post.data.content.find(content => content.type === 'paragraph')?.text ?? '',
+      updatedAt: new Date(post.last_publication_date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
+    }
+  });
 
   return {
-    props: {}
+    props: {
+      posts
+    }
   }
 }
